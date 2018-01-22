@@ -36,29 +36,29 @@ RUN ["/opt/tools/android-accept-licenses.sh", \
 
 # Install Node.JS
 RUN apt-get install -y curl \
-    && curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+    && curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash - \
     && apt-get install -y nodejs
 
 # Installation npm et mise à jour
 # Installation React Native
 # Install yarn
 RUN npm install -g npm \
+    && npm install -g n \
     && npm cache clean -f \
     && n stable \
     && npm install -g react-native-cli \
     && npm install -g create-react-native-app \
     && npm install -g yarn
 
-## Clean up when done
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-
 # Install watchman
 RUN apt-get install -y git autoconf automake build-essential libtool libssl-dev libcurl4-openssl-dev libcrypto++-dev
 RUN git clone https://github.com/facebook/watchman.git
 RUN cd watchman && git checkout v4.7.0 && ./autogen.sh && ./configure && make && make install
 RUN rm -rf watchman
+
+## Clean up when done
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Default react-native web server port
 EXPOSE 8081
