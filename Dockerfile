@@ -1,4 +1,4 @@
-# Docker image for react native.
+# Docker image for React Native.
 
 FROM ubuntu:14.04
 
@@ -10,6 +10,7 @@ ENV PATH $PATH:node_modules/.bin
 
 RUN apt-get update
 
+# Installation Java.
 RUN apt-get install -qy --no-install-recommends python-dev default-jdk
 
 # Install Deps
@@ -34,15 +35,19 @@ RUN ["/opt/tools/android-accept-licenses.sh", \
     "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23"]
 
 # Install Node.JS
-RUN apt-get install -y curl git
-RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-RUN apt-get install -y nodejs
+RUN apt-get install -y curl \
+    && curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+    && apt-get install -y nodejs
 
-# Mise à jour
-RUN npm install -g npm
-
-## Install react native
-RUN npm install -g react-native-cli
+# Installation npm et mise à jour
+# Installation React Native
+# Install yarn
+RUN npm install -g npm \
+    && npm cache clean -f \
+    && n stable \
+    && npm install -g react-native-cli \
+    && npm install -g create-react-native-app \
+    && npm install -g yarn
 
 ## Clean up when done
 RUN apt-get clean && \
@@ -50,19 +55,31 @@ RUN apt-get clean && \
 
 
 # Install watchman
-#RUN git clone https://github.com/facebook/watchman.git
-#RUN cd watchman && git checkout v4.7.0 && ./autogen.sh && ./configure && make && make install
-#RUN rm -rf watchman
+RUN apt-get install -y git autoconf automake build-essential libtool libssl-dev libcurl4-openssl-dev libcrypto++-dev
+RUN git clone https://github.com/facebook/watchman.git
+RUN cd watchman && git checkout v4.7.0 && ./autogen.sh && ./configure && make && make install
+RUN rm -rf watchman
 
 # Default react-native web server port
 EXPOSE 8081
+
+# Go to workspace
+RUN mkdir -p /opt/workspace
+WORKDIR /opt/workspace
 
 # Installation du système de test Jest https://facebook.github.io/jest/
 RUN npm install --save-dev jest
 
 # Création d'un projet TEST
-RUN react-native init AwesomeProject
+#RUN react-native init AwesomeProject
+RUN create-react-native-app AwesomeProject \
+    && cd AwesomeProject \
+    && npm start
 
-# Go to workspace
-RUN mkdir -p /opt/workspace
-WORKDIR /opt/workspace
+# Commande qui ne fonctionne pas...
+#RUN react-native build-android --release AwesomeProject
+
+# Publier l'APK sur le Web sur le port 5000.
+#RUN apt-get install -y ruby
+#RUN ruby -run -e httpd . -p5000
+
