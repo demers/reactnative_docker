@@ -10,11 +10,17 @@ Pour démarrer un émulateur et démarrer React Native comme
 sur un poste de travail Linux ordinaire, inspirez-vous ce projet:
 https://github.com/gilesp/docker/tree/master/react_native
 
-Pour générer le code APK avec Gradle, il faut s'assurer que dans le fichier
-gradle/wrapper/gradle-wrapper.properties l'URL soit HTTP et non HTTPS.
-
+Pour générer le code APK avec Gradle, il se peut que dans le fichier
+gradle/wrapper/gradle-wrapper.properties l'URL doive être en HTTP
+et non HTTPS.  Modifier la ligne comme suit:
 
 distributionUrl=http\://services.gradle.org/distributions/gradle-*-all.zip
+
+Pour partir ce conteneur faire:
+docker build -t react .
+docker run -d -p 5000:5000 -p 8081:8081 --name react react
+OU
+docker run -it -p 5000:5000 -p 8081:8081 --name react react /bin/bash
 
 Quelques liens en référence:
 

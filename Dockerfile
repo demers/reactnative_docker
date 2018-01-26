@@ -9,7 +9,7 @@ MAINTAINER FND <fndemers@gmail.com>
 ENV PATH $PATH:node_modules/.bin
 
 ENV WORKDIRECTORY /opt/workspace
-ENV WORKPROJECT project
+ENV WORKPROJECT AwesomeProject
 
 RUN apt-get update
 
@@ -141,7 +141,7 @@ ENV KEYTOOL_DNAME "CN=${KEYTOOL_CN}, OU=${KEYTOOL_OU}, O=${KEYTOOL_O}, L=${KEYTO
 
 
 # Création d'un projet TEST
-RUN react-native init AwesomeProject \
+RUN react-native init ${WORKPROJECT} \
     && cd AwesomeProject \
     && npm install \
     && cd android \
@@ -150,7 +150,8 @@ RUN react-native init AwesomeProject \
 
 RUN mkdir -p ${WORKDIRECTORY}/publish
 
-RUN cp -f ./app/build/outputs/apk/app-release-unsigned.apk ${WORKDIRECTORY}/publish
+RUN cd ${WORKDIRECTORY}/${WORKPROJECT}/android \
+    && cp -f ./app/build/outputs/apk/app-release-unsigned.apk ${WORKDIRECTORY}/publish
 
 #RUN create-react-native-app AwesomeProject \
 #    && cd AwesomeProject \
