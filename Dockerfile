@@ -1,4 +1,4 @@
-# Docker image for React Native.
+# Docker image for React Native and Android.
 
 FROM ubuntu:14.04
 
@@ -31,7 +31,7 @@ RUN dpkg --add-architecture i386 && apt-get update \
     libc6-i386 lib32stdc++6 lib32gcc1 lib32ncurses5 lib32z1
 
 # Install Android SDK
-RUN cd /opt && wget --output-document=android-sdk.tgz \
+RUN cd /opt && wget --quiet --output-document=android-sdk.tgz \
     http://dl.google.com/android/android-sdk_r24.3.3-linux.tgz \
     && tar xzf android-sdk.tgz && rm -f android-sdk.tgz \
     && chown -R root.root android-sdk-linux
@@ -48,8 +48,9 @@ RUN ["/opt/tools/android-accept-licenses.sh", \
     "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23"]
 
 # Unzip tools if not unzipped.
+# Strange that it is not uncompressed.
 RUN cd ${ANDROID_HOME} \
-    && unzip -o ${ANDROID_HOME}/temp/tools_r25.2.5-linux.zip
+    && unzip -o -q ${ANDROID_HOME}/temp/tools_r25.2.5-linux.zip
 
 #RUN /opt/tools/android-accept-licenses.sh \
 #    "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23" \
@@ -81,9 +82,9 @@ RUN npm install --save-dev jest
 
 # Install watchman
 RUN apt-get install -y git autoconf automake build-essential libtool libssl-dev libcurl4-openssl-dev libcrypto++-dev
-RUN cd /tmp && git clone https://github.com/facebook/watchman.git
-RUN cd watchman && git checkout v4.7.0 && ./autogen.sh && ./configure && make && make install
-RUN cd /tmp && rm -rf watchman
+RUN git clone https://github.com/facebook/watchman.git \
+    && cd watchman && git checkout v4.7.0 && ./autogen.sh && ./configure && make && make install \
+    && cd .. && rm -rf watchman
 
 ## Clean up when done
 RUN apt-get clean && \
@@ -95,14 +96,14 @@ EXPOSE 8081
 RUN mkdir -p ${WORKDIRECTORY}
 
 # Copy the project called ${WORKPROJECT}.zip
-RUN mkdir -p ${WORKDIRECTORY}/${WORKPROJECT}
-COPY ${WORKPROJECT}.zip ${WORKDIRECTORY}/${WORKPROJECT}
-RUN cd ${WORKDIRECTORY}/${WORKPROJECT} \
-    && unzip ${WORKPROJECT}.zip
+#RUN mkdir -p ${WORKDIRECTORY}/${WORKPROJECT}
+#COPY ${WORKPROJECT}.zip ${WORKDIRECTORY}/${WORKPROJECT}
+#RUN cd ${WORKDIRECTORY}/${WORKPROJECT} \
+#    && unzip ${WORKPROJECT}.zip
 
 # Install dependences
-RUN cd ${WORKDIRECTORY}/${WORKPROJECT} \
-    && npm install
+#RUN cd ${WORKDIRECTORY}/${WORKPROJECT} \
+#    && npm install
 
 # Go to workspace
 WORKDIR ${WORKDIRECTORY}
@@ -128,7 +129,7 @@ ENV KEYTOOL_KEYPASS "androidandroid"
 # DName
 ENV KEYTOOL_DNAME "CN=${KEYTOOL_CN}, OU=${KEYTOOL_OU}, O=${KEYTOOL_O}, L=${KEYTOOL_L}, S=${KEYTOOL_S}, C=${KEYTOOL_C}"
 
-# Il est peut-être pas nécessaire de créer une clé.
+# It is not necessary to generate a key.
 # Creation Android key.
 #RUN cd ${WORKDIRECTORY}/${WORKPROJECT}/android/app \
 #    && rm -f my-release-key.keystore \
