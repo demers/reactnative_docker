@@ -13,7 +13,7 @@ ENV WORKPROJECT project
 
 RUN apt-get update
 
-RUN apt-get install -y python-dev
+RUN apt-get install -y python-dev unzip vim-nox
 
 # Installation Java.
 #RUN apt-get install -qy --no-install-recommends python-dev default-jdk
@@ -39,21 +39,26 @@ RUN cd /opt && wget --output-document=android-sdk.tgz \
 # Setup environment
 ENV ANDROID_HOME /opt/android-sdk-linux
 ENV PATH ${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
+ENV GRADLE_USER_HOME "~/.gradle"
 
 # Install sdk elements
 COPY tools /opt/tools
 ENV PATH ${PATH}:/opt/tools
-#RUN ["/opt/tools/android-accept-licenses.sh", \
-#    "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23"]
+RUN ["/opt/tools/android-accept-licenses.sh", \
+    "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23"]
 
-RUN /opt/tools/android-accept-licenses.sh \
-    "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23" \
-    && /opt/tools/android-accept-licenses2.sh \
-    "/opt/android-sdk-linux/tools/bin/sdkmanager --update"
+# Unzip tools if not unzipped.
+RUN cd ${ANDROID_HOME} \
+    && unzip -o ${ANDROID_HOME}/temp/tools_r25.2.5-linux.zip
+
+#RUN /opt/tools/android-accept-licenses.sh \
+#    "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23" \
+#    && /opt/tools/android-accept-licenses2.sh \
+#    "/opt/android-sdk-linux/tools/bin/sdkmanager --update"
 
 #RUN /opt/android-sdk-linux/tools/bin/sdkmanager --update
-#RUN ["/opt/tools/android-accept-licenses2.sh", \
-#    "/opt/android-sdk-linux/tools/bin/sdkmanager --update"]
+RUN ["/opt/tools/android-accept-licenses2.sh", \
+    "/opt/android-sdk-linux/tools/bin/sdkmanager --update"]
 
 # Install Node.JS
 RUN apt-get install -y curl \
@@ -76,11 +81,9 @@ RUN npm install --save-dev jest
 
 # Install watchman
 RUN apt-get install -y git autoconf automake build-essential libtool libssl-dev libcurl4-openssl-dev libcrypto++-dev
-RUN git clone https://github.com/facebook/watchman.git
+RUN cd /tmp && git clone https://github.com/facebook/watchman.git
 RUN cd watchman && git checkout v4.7.0 && ./autogen.sh && ./configure && make && make install
-RUN rm -rf watchman
-
-RUN apt-get install -y unzip
+RUN cd /tmp && rm -rf watchman
 
 ## Clean up when done
 RUN apt-get clean && \
@@ -122,11 +125,14 @@ ENV KEYTOOL_STOREPASS "androidandroid"
 # Keypass
 ENV KEYTOOL_KEYPASS "androidandroid"
 
+# DName
 ENV KEYTOOL_DNAME "CN=${KEYTOOL_CN}, OU=${KEYTOOL_OU}, O=${KEYTOOL_O}, L=${KEYTOOL_L}, S=${KEYTOOL_S}, C=${KEYTOOL_C}"
 
-RUN cd ${WORKDIRECTORY}/${WORKPROJECT}/android/app \
-    && rm -f my-release-key.keystore \
-    && keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000 -dname "${KEYTOOL_DNAME}" -storepass "${KEYTOOL_STOREPASS}" -keypass "${KEYTOOL_KEYPASS}"
+# Il est peut-être pas nécessaire de créer une clé.
+# Creation Android key.
+#RUN cd ${WORKDIRECTORY}/${WORKPROJECT}/android/app \
+#    && rm -f my-release-key.keystore \
+#    && keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000 -dname "${KEYTOOL_DNAME}" -storepass "${KEYTOOL_STOREPASS}" -keypass "${KEYTOOL_KEYPASS}"
 
 #RUN cd ${WORKDIRECTORY}/${WORKPROJECT}/android \
 #    && chmod +x ./gradlew \
@@ -134,7 +140,17 @@ RUN cd ${WORKDIRECTORY}/${WORKPROJECT}/android/app \
 
 
 # Création d'un projet TEST
-#RUN react-native init AwesomeProject
+RUN react-native init AwesomeProject \
+    && cd AwesomeProject \
+    && npm install \
+    && cd android \
+    && chmod +x ./gradlew \
+    && ./gradlew assembleRelease
+
+RUN mkdir -p ${WORKDIRECTORY}/publish
+
+RUN cp -f ./app/build/outputs/apk/app-release-unsigned.apk ${WORKDIRECTORY}/publish
+
 #RUN create-react-native-app AwesomeProject \
 #    && cd AwesomeProject \
 #    && npm start
@@ -142,7 +158,11 @@ RUN cd ${WORKDIRECTORY}/${WORKPROJECT}/android/app \
 # Commande qui ne fonctionne pas...
 #RUN react-native build-android --release AwesomeProject
 
+# Port publish access
+EXPOSE 5000
+
 # Publier l'APK sur le Web sur le port 5000.
-#RUN apt-get install -y ruby
-#RUN ruby -run -e httpd . -p5000
+RUN apt-get install -y ruby
+RUN cd ${WORKDIRECTORY}/publish \
+    && ruby -run -e httpd . -p5000
 
