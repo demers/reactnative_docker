@@ -18,6 +18,7 @@ distributionUrl=http\://services.gradle.org/distributions/gradle-*-all.zip
 
 Pour partir ce conteneur faire:
 docker build -t react .
+
 docker run -d -p 5000:5000 -p 8081:8081 --name react react
 OU
 docker run -it -p 5000:5000 -p 8081:8081 --name react react /bin/bash

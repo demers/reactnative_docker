@@ -8,7 +8,9 @@ MAINTAINER FND <fndemers@gmail.com>
 # Setup environment variables
 ENV PATH $PATH:node_modules/.bin
 
+# Working Directory
 ENV WORKDIRECTORY /opt/workspace
+# Project Name
 ENV WORKPROJECT AwesomeProject
 
 RUN apt-get update
@@ -16,7 +18,9 @@ RUN apt-get update
 RUN apt-get install -y python-dev unzip vim-nox
 
 # Installation Java.
+# Open JDK
 #RUN apt-get install -qy --no-install-recommends python-dev default-jdk
+# Oracle Java 8
 RUN apt-get install -y software-properties-common \
     && add-apt-repository -y ppa:webupd8team/java \
     && apt-get update
@@ -52,11 +56,7 @@ RUN ["/opt/tools/android-accept-licenses.sh", \
 RUN cd ${ANDROID_HOME} \
     && unzip -o -q ${ANDROID_HOME}/temp/tools_r25.2.5-linux.zip
 
-#RUN /opt/tools/android-accept-licenses.sh \
-#    "android update sdk --all --force --no-ui --filter platform-tools,tools,build-tools-23,build-tools-23.0.2,android-23,addon-google_apis_x86-google-23,extra-android-support,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services,sys-img-armeabi-v7a-android-23" \
-#    && /opt/tools/android-accept-licenses2.sh \
-#    "/opt/android-sdk-linux/tools/bin/sdkmanager --update"
-
+# Accept all Android licenses
 #RUN /opt/android-sdk-linux/tools/bin/sdkmanager --update
 RUN ["/opt/tools/android-accept-licenses2.sh", \
     "/opt/android-sdk-linux/tools/bin/sdkmanager --update"]
@@ -165,6 +165,6 @@ EXPOSE 5000
 
 # Publier l'APK sur le Web sur le port 5000.
 RUN apt-get install -y ruby
-RUN cd ${WORKDIRECTORY}/publish \
-    && ruby -run -e httpd . -p5000
+
+CMD ruby -run -e httpd ${WORKDIRECTORY}/publish -p5000
 
